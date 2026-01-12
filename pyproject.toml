@@ -1,0 +1,10 @@
+[project]
+name = "app"
+version = "0.0.0"
+description = "Python katas exposed as a web service"
+requires-python = ">=3.12"
+
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]"
+]

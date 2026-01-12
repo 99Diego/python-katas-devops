@@ -1,0 +1,14 @@
+README.md
+pyproject.toml
+app/__init__.py
+app.egg-info/PKG-INFO
+app.egg-info/SOURCES.txt
+app.egg-info/dependency_links.txt
+app.egg-info/requires.txt
+app.egg-info/top_level.txt
+app/api/__init__.py
+app/api/main.py
+app/domain/__init__.py
+app/domain/dictionary.py
+app/domain/shopping.py
+app/domain/words.py
