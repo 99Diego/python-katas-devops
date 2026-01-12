@@ -40,7 +40,7 @@ jobs:
           pip install pytest pytest-cov
 
       - name: Run tests with coverage
-        run: pytest --cov=app --cov-fail-under=85
+        run: pytest --cov --cov-report=term-missing --cov-fail-under=85
 
 # -------------------------
   # JOB 3: SECURITY (PYTHON DEPENDENCIES)

@@ -1,10 +1,15 @@
 [project]
-name = "app"
-version = "0.0.0"
-description = "Python katas exposed as a web service"
+name = "python-katas-devops"
+version = "0.1.0"
 requires-python = ">=3.12"
 
-dependencies = [
-    "fastapi",
-    "uvicorn[standard]"
-]
+[tool.setuptools.packages.find]
+where = ["."]
+
+[tool.coverage.run]
+source = ["app"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_empty = true
