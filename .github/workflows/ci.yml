@@ -24,6 +24,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install flake8
+
       - name: Lint code
         run: flake8 app tests
 
@@ -46,6 +47,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install pytest pytest-cov
+
       - name: Run tests with coverage
         run: pytest --cov=app/domain --cov-report=term-missing --cov-fail-under=85
 
@@ -68,6 +70,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e .
           pip install pip-audit bandit
+
       - name: Dependency vulnerability scan
         run: pip-audit
 
@@ -80,7 +83,6 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: security-code
-
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     permissions:
@@ -100,18 +102,20 @@ jobs:
       - name: Install semantic-release
         run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
 
-      - name: Run semantic-release
+      - name: Run semantic-release (dry-run to get version)
+        id: semver
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
+        run: |
+          VERSION=$(npx semantic-release --dry-run | grep "The next release version is" | awk '{print $7}')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
 
   # -------------------------
-  # JOB 5: DOCKER BUILD & PUSH
+  # JOB 5: DOCKER BUILD, SECURITY & PUSH
   # -------------------------
   docker:
     runs-on: ubuntu-latest
     needs: release
-
     if: github.ref == 'refs/heads/main'
 
     steps:
@@ -123,11 +127,20 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build & push image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            99diego/python-katas-devops:latest
+      - name: Build Docker image
+        run: |
+          docker build -t 99diego/python-katas-devops:latest \
+                       -t 99diego/python-katas-devops:${{ steps.semver.outputs.version }} .
 
+      - name: Install Trivy
+        run: |
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh
+
+      - name: Scan Docker image
+        run: |
+          ./trivy image 99diego/python-katas-devops:${{ steps.semver.outputs.version }}
+
+      - name: Push Docker image
+        run: |
+          docker push 99diego/python-katas-devops:latest
+          docker push 99diego/python-katas-devops:${{ steps.semver.outputs.version }}
