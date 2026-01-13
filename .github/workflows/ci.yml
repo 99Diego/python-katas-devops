@@ -11,20 +11,16 @@ jobs:
   # -------------------------
   lint:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
           pip install flake8
-
       - name: Lint code
         run: flake8 app tests
 
@@ -34,93 +30,76 @@ jobs:
   test:
     runs-on: ubuntu-latest
     needs: lint
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -e .
           pip install pytest pytest-cov
-
       - name: Run tests with coverage
         run: pytest --cov=app/domain --cov-report=term-missing --cov-fail-under=85
 
   # -------------------------
-  # JOB 3: SECURITY (DEPENDENCIES)
+  # JOB 3: SECURITY (CODE)
   # -------------------------
   security-code:
     runs-on: ubuntu-latest
     needs: test
-
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install project and security tools
+      - name: Install security tools
         run: |
           python -m pip install --upgrade pip
           pip install -e .
           pip install pip-audit bandit
-
       - name: Dependency vulnerability scan
         run: pip-audit
-
       - name: Static security scan
         run: bandit -r app
 
   # -------------------------
-  # JOB 4: RELEASE (SEMVER)
+  # JOB 4: RELEASE (REAL SEMVER)
   # -------------------------
   release:
     runs-on: ubuntu-latest
     needs: security-code
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-
     permissions:
       contents: write
       issues: write
       pull-requests: write
-
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-
       - name: Install semantic-release
         run: npm install -g semantic-release @semantic-release/github @semantic-release/commit-analyzer @semantic-release/release-notes-generator
-
-      - name: Run semantic-release (dry-run to get version)
-        id: semver
+      - name: Run semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          VERSION=$(npx semantic-release --dry-run | grep "The next release version is" | awk '{print $7}')
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+        run: npx semantic-release
 
   # -------------------------
-  # JOB 5: DOCKER BUILD, SECURITY & PUSH
+  # JOB 5: DOCKER BUILD, SCAN & PUSH
   # -------------------------
   docker:
     runs-on: ubuntu-latest
     needs: release
-    
     if: github.ref == 'refs/heads/main'
-
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -128,20 +107,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Get semantic version (with fallback)
-        id: semver
+      - name: Get version from git tag
+        id: version
         run: |
-          VERSION=$(npx semantic-release --dry-run | grep "The next release version is" | awk '{print $7}')
-          if [ -z "$VERSION" ]; then
-            echo "⚠️ Semantic version not found, using fallback 'latest'"
-            VERSION="latest"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          VERSION=$(git describe --tags --abbrev=0)
+          echo "version=${VERSION#v}" >> $GITHUB_OUTPUT
 
       - name: Build Docker image
         run: |
-          docker build -t 99diego/python-katas-devops:latest \
-                       -t 99diego/python-katas-devops:${{ steps.semver.outputs.version }} .
+          docker build \
+            -t 99diego/python-katas-devops:latest \
+            -t 99diego/python-katas-devops:${{ steps.version.outputs.version }} \
+            .
 
       - name: Install Trivy
         run: |
@@ -150,9 +127,9 @@ jobs:
 
       - name: Scan Docker image
         run: |
-          trivy image 99diego/python-katas-devops:${{ steps.semver.outputs.version }}
+          trivy image 99diego/python-katas-devops:${{ steps.version.outputs.version }}
 
       - name: Push Docker image
         run: |
           docker push 99diego/python-katas-devops:latest
-          docker push 99diego/python-katas-devops:${{ steps.semver.outputs.version }}
+          docker push 99diego/python-katas-devops:${{ steps.version.outputs.version }}
