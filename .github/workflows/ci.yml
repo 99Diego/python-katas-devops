@@ -127,6 +127,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Get semantic version (with fallback)
+        id: semver
+        run: |
+          VERSION=$(npx semantic-release --dry-run | grep "The next release version is" | awk '{print $7}')
+          if [ -z "$VERSION" ]; then
+            echo "⚠️ Semantic version not found, using fallback 'latest'"
+            VERSION="latest"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT  
+
       - name: Build Docker image
         run: |
           docker build -t 99diego/python-katas-devops:latest \
