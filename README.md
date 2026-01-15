@@ -1,8 +1,8 @@
-# Python Katas – DevOps CI/CD & Kubernetes (Minikube)
+# From Code to Cluster: Python Katas with Full DevOps CI/CD & Kubernetes
 
 ## 📌 Project Overview
 
-This repository contains a set of **Python katas** (simple problem‑solving exercises) used as a **technical vehicle to demonstrate a complete DevOps workflow**, from source code to **containerized deployment on Kubernetes using Minikube**.
+This project contains a set of **Python katas** (simple problem‑solving exercises) used as a **technical vehicle to demonstrate a complete DevOps workflow**, from source code to **containerized deployment on Kubernetes using Minikube**.
 
 The **Python logic itself is intentionally simple**. The real value of this project lies in how the application is:
 
@@ -72,6 +72,7 @@ Kubernetes (Minikube)
    ├── Deployment
    └── Service (NodePort)
 ```
+![Architecture UI](./Architecture1_python-katas.png)
 
 ---
 
