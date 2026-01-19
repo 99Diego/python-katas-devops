@@ -269,7 +269,7 @@ Access the application:
 ```bash
 minikube service python-katas-devops -python-katas-devops
 ```
-![Serviceport](./Serviceport_python-katas.png)
+![Serviceport](./Serviceport_python-katas-devops.png)
 
 ### Service running
 ![Servicerunning-python-katas](./Service_running-python-katas.png)
