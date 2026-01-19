@@ -267,8 +267,12 @@ kubectl get svc
 Access the application:
 
 ```bash
-minikube service python-katas-devops
+minikube service python-katas-devops -python-katas-devops
 ```
+![Serviceport](./Serviceport_python-katas.png)
+
+### Service running
+![Servicerunning-python-katas](./Service_running-python-katas.png)
 
 This setup simulates **real Kubernetes deployment workflows** in a local environment.
 
